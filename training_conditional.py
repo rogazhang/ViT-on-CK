@@ -40,6 +40,9 @@ def get_training_args(output_dir="./training_conditional_vit"):
 def compute_metrics(eval_pred):
     """本地实现准确率和F1分数计算"""
     predictions, labels = eval_pred
+    # 如果 predictions 是 tuple (logits, hidden_states), 则只取 logits
+    if isinstance(predictions, tuple):
+        predictions = predictions[0]
     predictions = np.argmax(predictions, axis=1)
     accuracy = accuracy_score(labels, predictions)
     f1 = f1_score(labels, predictions, average="weighted")

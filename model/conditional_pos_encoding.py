@@ -53,15 +53,16 @@ class ViTCPVTForImageClassification(nn.Module):
 
     def __init__(self, num_labels=len(string_labels)):
         super(ViTCPVTForImageClassification, self).__init__()
-        # 加载预训练ViT（路径根据你的实际路径修改）
+        # 加载预训练ViT
         local_vit_path = "./vit_pretrained/vit-base-patch16-224-in21k"
         self.vit = ViTModel.from_pretrained(local_vit_path)
         embed_dim = self.vit.config.hidden_size
 
         # PEG 将取代原生的 Position Embeddings
-        self.vit.embeddings.position_embeddings = nn.Identity()
+        self.vit.embeddings.position_embeddings.data.zero_()
+        self.vit.embeddings.position_embeddings.requires_grad = False
         # 禁用位置编码的 forward 计算
-        self.vit.embeddings._dropout = nn.Identity()
+        self.vit.embeddings.dropout = nn.Identity()
 
         # 仅初始化1个PEG模块（原论文：仅第一层Encoder后使用）
         self.peg = PEG(embed_dim, kernel_size=3)
@@ -120,23 +121,22 @@ class ViTCPVTForImageClassification(nn.Module):
             attentions=outputs.attentions,
         )
 
-    def get_model(device="cuda"):
-        """创建模型并移至指定设备（兼容原训练脚本）"""
-        model = ViTCPVTForImageClassification()
-        model.to(device)
-        return model
+def get_model(device="cuda"):
+    """创建模型并移至指定设备（兼容原训练脚本）"""
+    model = ViTCPVTForImageClassification()
+    model.to(device)
+    return model
 
-    if __name__ == "__main__":
-        # 测试模型初始化和前向传播（验证无报错）
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        model = get_model(device)
-        print(f"模型初始化成功，设备: {device}")
+if __name__ == "__main__":
+    # 测试模型初始化和前向传播（验证无报错）
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model = get_model(device)
+    print(f"模型初始化成功，设备: {device}")
 
-        # 测试前向传播
-        dummy_input = torch.randn(2, 3, 224, 224).to(device)
-        dummy_labels = torch.tensor([0, 1]).to(device)
-        output = model(dummy_input, dummy_labels)
+    # 测试前向传播
+    dummy_input = torch.randn(2, 3, 224, 224).to(device)
+    dummy_labels = torch.tensor([0, 1]).to(device)
+    output = model(dummy_input, dummy_labels)
 
-        print(f"模型输出logits形状: {output.logits.shape}")
-        print(f"损失值: {output.loss.item():.4f}")
-        print("PEG已按CPVT原论文放置在第一层Encoder后，验证通过！")
+    print(f"模型输出logits形状: {output.logits.shape}")
+    print(f"损失值: {output.loss.item():.4f}")

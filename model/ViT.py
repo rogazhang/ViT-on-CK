@@ -10,7 +10,7 @@ class ViTForImageClassification(nn.Module):
     """基于ViT的图像分类模型"""
     def __init__(self, num_labels=len(string_labels)):
         super(ViTForImageClassification, self).__init__()
-        local_vit_path = "../vit_pretrained/vit-base-patch16-224-in21k"
+        local_vit_path = "./vit_pretrained/vit-base-patch16-224-in21k"
         self.vit = ViTModel.from_pretrained(local_vit_path)
         self.dropout = nn.Dropout(0.1)
         self.classifier = nn.Linear(self.vit.config.hidden_size, num_labels)
