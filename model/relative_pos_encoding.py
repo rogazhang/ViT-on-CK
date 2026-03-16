@@ -76,7 +76,7 @@ class RelPosAttention(nn.Module):
         self.proj = old_output.dense
         self.proj_drop = old_output.dropout
 
-        # 全局相对位置偏置模块 (假设输入是 224x224, Patch 为 16x16, 则 H=W=14)
+        # 全局相对位置偏置模块
         self.rel_pos = GlobalRelativePositionBias(num_heads=self.num_heads, h=14, w=14)
 
     def forward(self, hidden_states,attention_mask=None, **kwargs):
