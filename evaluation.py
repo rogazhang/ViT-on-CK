@@ -6,11 +6,11 @@ from training_vit import train_model
 from dataloader import string_labels
 
 def evaluate_model(trainer, test_ds):
-    """评估模型性能并可视化结果"""
-    # 1. 执行预测
-    print("执行模型预测...")
+    """仅使用测试集评估模型最终性能并可视化结果"""
+    # 1. 执行测试集预测（训练阶段完全未接触测试集）
+    print("执行测试集预测（最终性能检验）...")
     outputs = trainer.predict(test_ds)
-    print("预测完成，评估指标：")
+    print("测试集评估指标：")
     print(outputs.metrics)
 
     # 2. 解析预测结果
@@ -33,18 +33,20 @@ def evaluate_model(trainer, test_ds):
     )
     plt.xlabel("预测标签")
     plt.ylabel("真实标签")
-    plt.title("表情分类混淆矩阵")
+    plt.title("表情分类-测试集混淆矩阵")
     plt.tight_layout()
-    plt.savefig("./confusion_matrix.png")  # 保存到本地
+    plt.savefig("./test_confusion_matrix.png")  # 保存到本地
     plt.show()
 
     return outputs.metrics
 
 
 if __name__ == "__main__":
-    # 先训练模型，再评估
+    # 先训练模型（训练+验证），再用测试集做最终评估
     trainer, test_ds = train_model()
     metrics = evaluate_model(trainer, test_ds)
-    print(f"\n最终评估结果：")
+    print(f"\n=== 测试集最终评估结果 ===")
     print(f"准确率: {metrics['test_accuracy']:.4f}")
     print(f"F1分数: {metrics['test_f1']:.4f}")
+    print(f"UAR: {metrics['test_uar']:.4f}")
+    print(f"WAR: {metrics['test_war']:.4f}")

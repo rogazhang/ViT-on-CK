@@ -4,6 +4,7 @@ from transformers import ViTImageProcessor
 local_vit_path = "./vit_pretrained/vit-base-patch16-224-in21k"
 feature_extractor = ViTImageProcessor.from_pretrained(local_vit_path)
 
+
 def preprocess_images(examples):
     """
     图像预处理函数：
@@ -24,10 +25,16 @@ def preprocess_images(examples):
     return {"pixel_values": inputs['pixel_values']}
 
 
-def get_preprocessed_datasets(train_ds, test_ds):
-    """对训练/测试集执行预处理，并设置张量格式"""
+def get_preprocessed_datasets(train_ds, val_ds, test_ds):
+    """对训练/验证/测试集执行预处理，并设置张量格式"""
     # 映射预处理函数，移除原始image列节省内存
     preprocessed_train_ds = train_ds.map(
+        preprocess_images,
+        batched=True,
+        remove_columns=['image']
+    )
+    # 修正：验证集用val_ds而不是test_ds
+    preprocessed_val_ds = val_ds.map(
         preprocess_images,
         batched=True,
         remove_columns=['image']
@@ -40,16 +47,20 @@ def get_preprocessed_datasets(train_ds, test_ds):
 
     # 设置为PyTorch张量格式
     preprocessed_train_ds.set_format(type='torch', columns=['pixel_values', 'label'])
+    preprocessed_val_ds.set_format(type='torch', columns=['pixel_values', 'label'])
     preprocessed_test_ds.set_format(type='torch', columns=['pixel_values', 'label'])
 
-    return preprocessed_train_ds, preprocessed_test_ds
+    return preprocessed_train_ds, preprocessed_val_ds, preprocessed_test_ds
 
 
 if __name__ == "__main__":
     # 测试预处理（需先运行dataloader）
     from dataloader import create_hf_dataset
 
-    train_ds, test_ds = create_hf_dataset()
-    pre_train, pre_test = get_preprocessed_datasets(train_ds, test_ds)
-    print(f"预处理后训练集形状: {pre_train[0]['pixel_values'].shape}")
+    train_ds, val_ds, test_ds = create_hf_dataset()  # 修正：匹配3个返回值
+    pre_train, pre_val, pre_test = get_preprocessed_datasets(train_ds, val_ds, test_ds)  # 传3个参数
+
+    print(f"预处理后训练集第1个样本形状: {pre_train[0]['pixel_values'].shape}")
+    print(f"预处理后验证集第1个样本形状: {pre_val[0]['pixel_values'].shape}")
+    print(f"预处理后测试集第1个样本形状: {pre_test[0]['pixel_values'].shape}")
     print("预处理测试成功")
